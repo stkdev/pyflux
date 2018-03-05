@@ -504,11 +504,14 @@ class ARIMAX(tsm.TSM):
         model_scale, model_shape, model_skewness = self._get_scale_and_shape(t_z)
 
         sim_vector = np.zeros([simulations,h])
+        
+        _Y_exp = Y.copy()
+        _mu_exp = mu.copy()
 
         for n in range(0, simulations):
             # Create arrays to iteratre over
-            Y_exp = Y.copy()
-            mu_exp = mu.copy()
+            Y_exp = _Y_exp
+            mu_exp = _mu_exp
 
             # Loop over h time periods          
             for t in range(0, h):
@@ -562,6 +565,9 @@ class ARIMAX(tsm.TSM):
         """     
 
         sim_vector = np.zeros([simulations,h])
+        
+        _Y_exp = Y.copy()
+        _mu_exp = mu.copy()
 
         for n in range(0, simulations):
 
@@ -572,8 +578,8 @@ class ARIMAX(tsm.TSM):
             model_scale, model_shape, model_skewness = self._get_scale_and_shape(t_z)
 
             # Create arrays to iterate over
-            Y_exp = Y.copy()
-            mu_exp = mu.copy()
+            Y_exp = _Y_exp
+            mu_exp = _mu_exp
 
             # Loop over h time periods          
             for t in range(0, h):
@@ -710,15 +716,9 @@ class ARIMAX(tsm.TSM):
         model_scale, model_shape, model_skewness = self._get_scale_and_shape(transformed_parameters)
         return self.family.neg_loglikelihood(Y, self.link(mu), model_scale, model_shape, model_skewness)
 
-    def plot_fit(self, **kwargs):
-        """ 
-        Plots the fit of the model against the data
-        """
-        import matplotlib.pyplot as plt
+    def fit_values(self, **kwargs):
         import seaborn as sns
 
-        figsize = kwargs.get('figsize',(10,7))
-        plt.figure(figsize=figsize)
         date_index = self.index[max(self.ar, self.ma):self.data.shape[0]]
         mu, Y = self._model(self.latent_variables.get_z_values())
 
@@ -733,6 +733,22 @@ class ARIMAX(tsm.TSM):
             values_to_plot = mu + additional_loc
         else:
             values_to_plot = self.link(mu)
+        
+        return values_to_plot
+
+    def plot_fit(self, **kwargs):
+        """ 
+        Plots the fit of the model against the data
+        """
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+
+        figsize = kwargs.get('figsize',(10,7))
+        plt.figure(figsize=figsize)
+        date_index = self.index[max(self.ar, self.ma):self.data.shape[0]]
+        mu, Y = self._model(self.latent_variables.get_z_values())
+        
+        values_to_plot = self.fit_values()
 
         plt.plot(date_index, Y, label='Data')
         plt.plot(date_index, values_to_plot, label='ARIMA model', c='black')
